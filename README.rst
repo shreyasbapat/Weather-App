@@ -16,7 +16,7 @@ How to Use:
 -----------
 Switch to a virtual environment! ``cd`` into project's directory:
 ```
-virtualenv --python=<path_to_python2> venv
+python3 -m venv venv
 source venv/bin/activate
 ```
 
