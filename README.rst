@@ -14,7 +14,11 @@ Contains different interactive visualisations to understand better.
 
 How to Use:
 -----------
-Switch to a virtual environment! ``cd`` into project's directory.
+Switch to a virtual environment! ``cd`` into project's directory:
+```
+virtualenv --python=<path_to_python2> venv
+source venv/bin/activate
+```
 
 Install all the dependencies:
 

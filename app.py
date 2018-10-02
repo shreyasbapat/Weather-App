@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -83,7 +84,7 @@ def get_data_24h_in(byhour):
 
 app = dash.Dash()
 app.title = 'Weather || Astrool'
-image_filename = 'obj.png' # replace with your own image
+image_filename = 'logo.png' 
 encoded_image = base64.b64encode(open(image_filename, 'rb').read())
 static_image_route = 'Icons/'
 
