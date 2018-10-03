@@ -14,7 +14,11 @@ Contains different interactive visualisations to understand better.
 
 How to Use:
 -----------
-Switch to a virtual environment! ``cd`` into project's directory.
+Switch to a virtual environment! ``cd`` into project's directory:
+```
+python3 -m venv venv
+source venv/bin/activate
+```
 
 Install all the dependencies:
 

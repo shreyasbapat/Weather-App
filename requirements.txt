@@ -4,5 +4,4 @@ dash-html-components==0.11.0
 dash-core-components==0.24.1
 plotly
 geocoder
-forecastio
-...
+python-forecastio
