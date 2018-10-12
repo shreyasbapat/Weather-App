@@ -8,47 +8,35 @@ from datetime import datetime
 import forecastio
 from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
+from cachetools import cached, TTLCache
 
-def weather_on(loca):
-    a = geocoder.location(location=loca)
-    api_key = "c5dde0bafce3442350c75b743864339a"
+# This probably shouldn't be committed
+API_KEY = "c5dde0bafce3442350c75b743864339a"
+
+# Picked an arbitrary maxsize and ttl-- modify as needed
+weather_cache = TTLCache(maxsize=5, ttl=3600*5)
+
+@cached(weather_cache)
+def _get_forecast(location):
+    a = geocoder.location(location=location)
     lat = a.latlng[0]
     lng = a.latlng[1]
-    forecast = forecastio.load_forecast(api_key, lat, lng, time=datetime.now())
+    forecast = forecastio.load_forecast(API_KEY, lat, lng)
+
+    return forecast
+
+def weather_on(loca):
+    forecast = _get_forecast(loca)
     byHour = forecast.hourly()
     return byHour
 
 def weather_latest(loca):
-    a = geocoder.location(location=loca)
-    api_key = "c5dde0bafce3442350c75b743864339a"
-    lat = a.latlng[0]
-    lng = a.latlng[1]
-    forecast = forecastio.load_forecast(api_key, lat, lng, time=datetime.now())
+    forecast = _get_forecast(loca)
     this = forecast.currently().d
     return this
 
-def get_sum_td(this):
-    keys= []
-    val=[]
-    for k, v in this.items():
-        keys.append(k.capitalize())
-        val.append(v)
-    return keys, val
-
-def get_icon(byhour):
-    return byhour.icon
-
 def get_summary(byhour):
     return byhour.summary
-
-def get_cur_temp(this):
-    return this['temperature']
-
-def get_cur_pro(this):
-    return this['precipProbability']
-
-def get_cur_h(this):
-    return this['humidity']
 
 def get_data_24h(byhour):
     temp = []
@@ -163,6 +151,15 @@ app.layout = html.Div([
                 'color': 'green'
             }),
     html.H1(
+            children='7 Day Forecast',
+            style={'textAlign': 'center'
+                }
+        ),
+    html.Div(id='table',
+            style={
+                'textAlign': 'center',
+            }),
+    html.H1(
             children='Visualisations to help understand: ',
             style={
                 'textAlign': 'center'
@@ -249,25 +246,22 @@ app.layout = html.Div([
               [Input('submit-button', 'n_clicks')],
               [State('input-1-state', 'value')])
 def update_output(n_clicks, input1):
-    return ico(input1)
-
-def ico(val):
-    get_icon(weather_on(val))
+    return None
 
 def ret_str(val):
-    return get_icon(weather_on(val))
+    return weather_on(val).icon
 
 def ret_sum(val):
     return get_summary(weather_on(val))
 
 def ret_temp(val):
-    return get_cur_temp(weather_latest(val))
+    return weather_latest(val)['temperature']
 
 def ret_pre(val):
-    return get_cur_pro(weather_latest(val))
+    return weather_latest(val)['precipProbability']
 
 def ret_h(val):
-    return get_cur_h(weather_latest(val))
+    return weather_latest(val)['humidity']
 
 def ret_tup(val):
     return get_data_24h(weather_on(val))
@@ -319,6 +313,17 @@ def update_msg3(n_clicks, value):
     stringo = "Probablilty of Rain: " + stringo
     return stringo
 
+@app.callback(Output('table', 'children'),
+              [Input('submit-button', 'n_clicks')],
+              [State('input-1-state', 'value')])
+def table(n_clicks, value):
+    f = _get_forecast(value)
+    dates = [str(d.time.date()) for d in f.daily().data]
+    summary = [d.summary for d in f.daily().data]
+
+    return html.Table([html.Tr([html.Th(d) for d in dates[:7]])] + 
+            [html.Tr([html.Td(s) for s in summary[:7]])])
+
 @app.callback(Output('h', 'children'),
               [Input('submit-button', 'n_clicks')],
               [State('input-1-state', 'value')])
@@ -332,7 +337,7 @@ def update_msg4(n_clicks, value):
               [State('input-1-state', 'value')])
 def prin_gra(n_clicks, value):
     a,b = ret_tup(value)
-    dict = {
+    d = {
         'data' : [
             {
                 'x' : b,
@@ -341,14 +346,14 @@ def prin_gra(n_clicks, value):
             }
         ]
     }
-    return dict
+    return d
 
 @app.callback(Output('first_graph1', 'figure'),
               [Input('submit-button', 'n_clicks')],
               [State('input-1-state', 'value')])
 def prin_gra1(n_clicks, value):
     a,b =  ret_tup2(value)
-    dict = {
+    d = {
         'data' : [
             {
                 'x' : b,
@@ -356,14 +361,14 @@ def prin_gra1(n_clicks, value):
             }
         ]
     }
-    return dict
+    return d
 
 @app.callback(Output('first_graph2', 'figure'),
               [Input('submit-button', 'n_clicks')],
               [State('input-1-state', 'value')])
 def prin_gra1(n_clicks, value):
     a,b =  ret_tup3(value)
-    dict = {
+    d = {
         'data' : [
             {
                 'x' : b,
@@ -371,14 +376,14 @@ def prin_gra1(n_clicks, value):
             }
         ]
     }
-    return dict
+    return d
 
 @app.callback(Output('first_graph3', 'figure'),
               [Input('submit-button', 'n_clicks')],
               [State('input-1-state', 'value')])
 def prin_gra1(n_clicks, value):
     a,b =  ret_tup4(value)
-    dict = {
+    d = {
         'data' : [
             {
                 'x' : b,
@@ -386,7 +391,7 @@ def prin_gra1(n_clicks, value):
             }
         ]
     }
-    return dict
+    return d
 
 if __name__ == '__main__':
     app.run_server(debug=True)
